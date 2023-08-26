@@ -57,9 +57,9 @@ class TravelAppUI(BoxLayout):
     # Method to show the "Create Trip" popup
     def show_create_trip_popup(self, instance):
         content = BoxLayout(orientation='vertical')
-        self.destination_input = TextInput(hint_text='Destination')
-        self.start_date_input = TextInput(hint_text='Start Date')
-        self.end_date_input = TextInput(hint_text='End Date')
+        self.destination_input = TextInput(hint_text='Destination - Only letters')
+        self.start_date_input = TextInput(hint_text='Start Date - dd/mm/yy format')
+        self.end_date_input = TextInput(hint_text='End Date - dd/mm/yy format')
 
         create_button = Button(text="Create")
         create_button.bind(on_press=lambda instance: self.create_trip(instance))  # Pass only the instance
@@ -77,20 +77,36 @@ class TravelAppUI(BoxLayout):
         self.create_trip_popup.open()
 
     # Method to create a new trip
+    def is_valid_date(self, date_str):
+        pattern = r"\d{2}/\d{2}/\d{2}"  # Pattern for dd/mm/yyyy format
+        return re.match(pattern, date_str)
+
     def create_trip(self, instance):
         destination = self.destination_input.text
         if not self.is_valid_destination(destination):
-            error_callback = lambda instance: self.dismiss_popup(self.error_popup)  # Callback to dismiss error popup
+            error_callback = lambda instance: self.dismiss_popup(self.error_popup)
             self.error_popup = self.show_message_popup("Error", "Invalid destination. Please enter only letters.",
                                                        error_callback)
             return
 
         start_date = self.start_date_input.text
+        if not self.is_valid_date(start_date):
+            error_callback = lambda instance: self.dismiss_popup(self.error_popup)
+            self.error_popup = self.show_message_popup("Error", "Invalid start date format. Please use dd/mm/yy.",
+                                                       error_callback)
+            return
+
         end_date = self.end_date_input.text
+        if not self.is_valid_date(end_date):
+            error_callback = lambda instance: self.dismiss_popup(self.error_popup)
+            self.error_popup = self.show_message_popup("Error", "Invalid end date format. Please use dd/mm/yy.",
+                                                       error_callback)
+            return
+
         trip = Trip(destination, start_date, end_date)
         self.trips.append(trip)
-        if self.create_trip_popup:  # Check if popup exists before dismissing
-            self.create_trip_popup.dismiss()  # Dismiss the popup after creating the trip
+        if self.create_trip_popup:
+            self.create_trip_popup.dismiss()
 
     # Method to check if a destination is valid (contains only letters)
     def is_valid_destination(self, destination):
