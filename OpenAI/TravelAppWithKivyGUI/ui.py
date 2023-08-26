@@ -180,7 +180,7 @@ class TravelAppUI(BoxLayout):
         close_button.bind(on_press=lambda instance: self.dismiss_popup(self.add_activity_popup))
         content.add_widget(close_button)
 
-        self.add_activity_popup = Popup(title='Add Activity', content=content, size_hint=(None, None), size=(400, 300))
+        self.add_activity_popup = Popup(title='Add Activity', content=content, size_hint=(0.8, 0.6))
         self.add_activity_popup.open()
 
     def on_trip_select(self, trip_text):
@@ -241,8 +241,7 @@ class TravelAppUI(BoxLayout):
         close_button_layout.add_widget(close_button)
         content.add_widget(close_button_layout)
 
-        self.show_all_trips_popup_instance = Popup(title='All Trips', content=content, size_hint=(None, None),
-                                                   size=(600, 400))
+        self.show_all_trips_popup_instance = Popup(title='All Trips', content=content, size_hint=(0.8, 0.6))
         self.show_all_trips_popup_instance.open()
 
     def load_trips_from_file(self):
