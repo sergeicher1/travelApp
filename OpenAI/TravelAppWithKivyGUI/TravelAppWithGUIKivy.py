@@ -6,6 +6,7 @@ from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
 from kivy.uix.scrollview import ScrollView
+import re
 
 
 # Define the Trip class to store trip information
@@ -22,6 +23,7 @@ class Trip:
     def __str__(self):
         activities_str = "\n".join(self.activities)
         return f"Trip to {self.destination} ({self.start_date} - {self.end_date}):\n{activities_str}"
+
 
 #
 # Define the main UI class
@@ -50,6 +52,8 @@ class TravelAppUI(BoxLayout):
         self.create_trip_popup = None
         self.add_activity_popup = None
 
+        error_popup = None  # Initialize the error popup reference
+
     # Method to show the "Create Trip" popup
     def show_create_trip_popup(self, instance):
         content = BoxLayout(orientation='vertical')
@@ -75,12 +79,22 @@ class TravelAppUI(BoxLayout):
     # Method to create a new trip
     def create_trip(self, instance):
         destination = self.destination_input.text
+        if not self.is_valid_destination(destination):
+            error_callback = lambda instance: self.dismiss_popup(self.error_popup)  # Callback to dismiss error popup
+            self.error_popup = self.show_message_popup("Error", "Invalid destination. Please enter only letters.",
+                                                       error_callback)
+            return
+
         start_date = self.start_date_input.text
         end_date = self.end_date_input.text
         trip = Trip(destination, start_date, end_date)
         self.trips.append(trip)
         if self.create_trip_popup:  # Check if popup exists before dismissing
             self.create_trip_popup.dismiss()  # Dismiss the popup after creating the trip
+
+    # Method to check if a destination is valid (contains only letters)
+    def is_valid_destination(self, destination):
+        return bool(re.match("^[A-Za-z]+$", destination))
 
     # Method to show the "Add Activity" popup
     def show_add_activity_popup(self, instance):
@@ -134,14 +148,17 @@ class TravelAppUI(BoxLayout):
         self.show_all_trips_popup_instance.open()
 
     # Method to show a message popup
-    def show_message_popup(self, title, message):
+    def show_message_popup(self, title, message, callback=None):
         content = BoxLayout(orientation='vertical')
         message_label = Label(text=message)
         ok_button = Button(text="OK")
+        if callback:
+            ok_button.bind(on_press=callback)  # Bind the OK button to the provided callback
         popup = Popup(title=title, content=content, size_hint=(None, None), size=(400, 200))
         content.add_widget(message_label)
         content.add_widget(ok_button)
         popup.open()
+        return popup
 
     # Method to dismiss a popup
     def dismiss_popup(self, popup):
