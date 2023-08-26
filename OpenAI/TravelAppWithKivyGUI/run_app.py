@@ -11,5 +11,6 @@ class TravelApp(App):
         app_ui.load_trips_from_file()  # Load trips from file
         return app_ui
 
+
 if __name__ == '__main__':
     TravelApp().run()

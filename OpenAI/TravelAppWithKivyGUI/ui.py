@@ -217,8 +217,12 @@ class TravelAppUI(BoxLayout):
         trips_layout = BoxLayout(orientation='vertical', spacing=10, size_hint_y=None)
         trips_layout.bind(minimum_height=trips_layout.setter('height'))  # Make the layout scrollable if needed
 
-        for trip in self.trips:
-            trip_label = Label(text=str(trip), halign='center', valign='middle', size_hint_y=None, height=50)
+        # Add vertical spacing before the first trip data
+        trips_layout.add_widget(Widget(size_hint_y=None, height=20))
+
+        for index, trip in enumerate(self.trips, start=1):
+            trip_label = Label(text=f"{index}. {str(trip)}", halign='center', valign='middle', size_hint_y=None,
+                               height=50)
             delete_button = Button(text="Delete", size_hint=(None, None), size=(100, 50))
             delete_button.bind(on_press=lambda instance, trip=trip: self.delete_selected_trip(trip))
 
