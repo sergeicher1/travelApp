@@ -18,6 +18,7 @@ from kivy.uix.dropdown import DropDown
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from trip import Trip
+from kivy.graphics import Color, Line
 
 
 #
@@ -204,6 +205,52 @@ class TravelAppUI(BoxLayout):
                 return
         self.show_message_popup("Error", "Selected trip not found.")
 
+    # def show_all_trips_popup(self, instance):
+    #     self.load_trips_from_file()
+    #
+    #     if not self.trips:
+    #         self.show_message_popup("Info", "No active trips.")
+    #         return
+
+    # content = BoxLayout(orientation='vertical')
+    # scroll_view = ScrollView()
+    #
+    #     trips_layout = BoxLayout(orientation='vertical', spacing=10, size_hint_y=None)
+    #     trips_layout.bind(minimum_height=trips_layout.setter('height'))  # Make the layout scrollable if needed
+    #
+    #     # Add vertical spacing before the first trip data
+    #     trips_layout.add_widget(Widget(size_hint_y=None, height=50))
+    #
+    #     for index, trip in enumerate(self.trips, start=1):
+    #         trip_button = Button(text=f"{index}. {trip.destination} - {trip.start_date} to {trip.end_date}",
+    #                              size_hint_y=None, height=50)
+    #         trip_dropdown = DropDown(auto_width=False, width=400)
+    #
+    #         activities_label = Label(text='\n'.join(trip.activities), halign='left', valign='top', size_hint_y=None)
+    #         trip_dropdown.add_widget(activities_label)
+    #
+    #         trip_button.bind(on_release=trip_dropdown.open)
+    #         trip_dropdown.bind(on_select=lambda instance, x: setattr(trip_button, 'text', x))
+    #
+    #         trip_layout = BoxLayout(orientation='horizontal', size_hint=(1, None), height=50)
+    #         trip_layout.add_widget(trip_button)
+    #         trips_layout.add_widget(trip_layout)
+    #
+    #     scroll_view.add_widget(trips_layout)
+    #     content.add_widget(scroll_view)
+    #
+    # # Create a horizontal BoxLayout for the close button
+    # close_button_layout = BoxLayout(orientation='horizontal', size_hint=(1, None), height=50)
+    # close_button = Button(text="Close", size_hint=(1, None), size=(200, 50))
+    # close_button.bind(on_press=lambda instance: self.dismiss_popup(self.show_all_trips_popup_instance))
+    # close_button_layout.add_widget(close_button)
+    # content.add_widget(close_button_layout)
+    #
+    # self.show_all_trips_popup_instance = Popup(title='All Trips', content=content, size_hint=(0.8, 0.6))
+    # self.show_all_trips_popup_instance.open()
+    # Modify the show_all_trips_popup method
+    # Modify the show_all_trips_popup method
+    # Modify the show_all_trips_popup method
     def show_all_trips_popup(self, instance):
         self.load_trips_from_file()
 
@@ -211,25 +258,19 @@ class TravelAppUI(BoxLayout):
             self.show_message_popup("Info", "No active trips.")
             return
 
-        content = BoxLayout(orientation='vertical')
+        content = BoxLayout(orientation='vertical', spacing=10)
+
+        # Create a ScrollView to contain the trip buttons
         scroll_view = ScrollView()
 
         trips_layout = BoxLayout(orientation='vertical', spacing=10, size_hint_y=None)
         trips_layout.bind(minimum_height=trips_layout.setter('height'))  # Make the layout scrollable if needed
 
-        # Add vertical spacing before the first trip data
-        trips_layout.add_widget(Widget(size_hint_y=None, height=20))
-
-        for index, trip in enumerate(self.trips, start=1):
-            trip_label = Label(text=f"{index}. {str(trip)}", halign='center', valign='middle', size_hint_y=None,
-                               height=50)
-            delete_button = Button(text="Delete", size_hint=(None, None), size=(100, 50))
-            delete_button.bind(on_press=lambda instance, trip=trip: self.delete_selected_trip(trip))
-
-            trip_layout = BoxLayout(orientation='horizontal', size_hint=(1, None), height=50)
-            trip_layout.add_widget(trip_label)
-            trip_layout.add_widget(delete_button)
-            trips_layout.add_widget(trip_layout)
+        for trip in self.trips:
+            trip_button = Button(text=f"{trip.destination} - {trip.start_date} to {trip.end_date}",
+                                 size_hint_y=None, height=50)
+            trip_button.bind(on_press=lambda instance, trip=trip: self.show_trip_activities_popup(trip))
+            trips_layout.add_widget(trip_button)
 
         scroll_view.add_widget(trips_layout)
         content.add_widget(scroll_view)
@@ -243,6 +284,38 @@ class TravelAppUI(BoxLayout):
 
         self.show_all_trips_popup_instance = Popup(title='All Trips', content=content, size_hint=(0.8, 0.6))
         self.show_all_trips_popup_instance.open()
+
+    def show_trip_activities_popup(self, trip):
+        content = BoxLayout(orientation='vertical', spacing=10)
+
+        # Create a ScrollView to contain the trip activities
+        scroll_view = ScrollView()
+
+        activities_layout = BoxLayout(orientation='vertical', spacing=10, size_hint_y=None)
+        activities_layout.bind(
+            minimum_height=activities_layout.setter('height'))  # Make the layout scrollable if needed
+
+        for index, activity in enumerate(trip.activities, start=1):
+            activity_label = Label(text=f"{index}. {activity}", size_hint_y=None, height=50)
+            activities_layout.add_widget(activity_label)
+
+        scroll_view.add_widget(activities_layout)
+        content.add_widget(scroll_view)
+
+        # Create a horizontal BoxLayout for the close button
+        close_button_layout = BoxLayout(orientation='horizontal', size_hint=(1, None), height=50)
+        close_button = Button(text="Close", size_hint=(1, None), size=(200, 50))
+        close_button.bind(on_press=lambda instance: self.dismiss_popup(self.trip_activities_popup_instance))
+        close_button_layout.add_widget(close_button)
+        content.add_widget(close_button_layout)
+
+        self.trip_activities_popup_instance = Popup(title='Trip Activities', content=content, size_hint=(0.8, 0.6))
+        self.trip_activities_popup_instance.open()
+
+    def show_trip_details(self, trip):
+        # Here you can implement the logic to display details of the selected trip.
+        # You can use the provided 'trip' parameter to access the trip's information.
+        pass
 
     def load_trips_from_file(self):
         try:
