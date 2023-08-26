@@ -1,6 +1,7 @@
 # ui.py
 import datetime
-
+import pickle
+import json
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
@@ -26,7 +27,12 @@ class TravelAppUI(BoxLayout):
         super().__init__(**kwargs)
         self.orientation = 'vertical'
         self.trips = []
-
+        # Load saved trips from file if it exists
+        try:
+            with open("trips.pkl", "rb") as file:
+                self.trips = pickle.load(file)
+        except FileNotFoundError:
+            pass
         # Create a horizontal BoxLayout for the logo and button
         logo_and_button_layout = BoxLayout(orientation='horizontal')
 
@@ -70,16 +76,17 @@ class TravelAppUI(BoxLayout):
 
     # Method to show the "Create Trip" popup
     def show_create_trip_popup(self, instance):
-        content = BoxLayout(orientation='vertical')
+        content = BoxLayout(orientation='vertical', spacing=10, padding=10)
+
         self.destination_input = TextInput(hint_text='Destination')
         self.start_date_input = TextInput(hint_text='Start Date (dd/mm/yyyy)')
         self.end_date_input = TextInput(hint_text='End Date (dd/mm/yyyy)')
 
         create_button = Button(text="Create")
-        create_button.bind(on_press=lambda instance: self.create_trip(instance))  # Pass only the instance
+        create_button.bind(on_press=self.create_trip)
 
         close_button = Button(text="Close")
-        close_button.bind(on_press=lambda instance: self.dismiss_popup(self.create_trip_popup))  # Pass popup instance
+        close_button.bind(on_press=lambda instance: self.dismiss_popup(self.create_trip_popup))
 
         content.add_widget(self.destination_input)
         content.add_widget(self.start_date_input)
@@ -87,7 +94,7 @@ class TravelAppUI(BoxLayout):
         content.add_widget(create_button)
         content.add_widget(close_button)
 
-        self.create_trip_popup = Popup(title='Create Trip', content=content, size_hint=(None, None), size=(400, 300))
+        self.create_trip_popup = Popup(title='Create Trip', content=content, size_hint=(0.8, 0.6))
         self.create_trip_popup.open()
 
     # Method to create a new trip
@@ -120,31 +127,28 @@ class TravelAppUI(BoxLayout):
         if not self.is_valid_date_format(end_date):
             self.show_message_popup("Error", "Invalid end date format. Please use dd/mm/yyyy.")
             return
-        destination = self.destination_input.text
+
         if not self.is_valid_destination(destination):
-            error_callback = lambda instance: self.dismiss_popup(self.error_popup)
-            self.error_popup = self.show_message_popup("Error", "Invalid destination. Please enter only letters.",
-                                                       error_callback)
-            return
-
-        start_date = self.start_date_input.text
-        if not self.is_valid_date(start_date):
-            error_callback = lambda instance: self.dismiss_popup(self.error_popup)
-            self.error_popup = self.show_message_popup("Error", "Invalid start date format. Please use dd/mm/yy.",
-                                                       error_callback)
-            return
-
-        end_date = self.end_date_input.text
-        if not self.is_valid_date(end_date):
-            error_callback = lambda instance: self.dismiss_popup(self.error_popup)
-            self.error_popup = self.show_message_popup("Error", "Invalid end date format. Please use dd/mm/yy.",
-                                                       error_callback)
+            self.show_message_popup("Error", "Invalid destination. Please enter only letters.")
             return
 
         trip = Trip(destination, start_date, end_date)
         self.trips.append(trip)
+
+        # Save the updated trips list to a JSON file
+        self.save_trips_to_file()
+
         if self.create_trip_popup:
             self.create_trip_popup.dismiss()
+
+    def save_trips_to_file(self):
+        with open('trips.json', 'w') as file:
+            trips_data = [{'destination': trip.destination,
+                           'start_date': trip.start_date,
+                           'end_date': trip.end_date,
+                           'activities': trip.activities}
+                          for trip in self.trips]
+            json.dump(trips_data, file)
 
     # Method to check if a destination is valid (contains only letters)
     def is_valid_destination(self, destination):
@@ -156,21 +160,24 @@ class TravelAppUI(BoxLayout):
             self.show_message_popup("Error", "No trips available. Create a trip first.")
             return
 
-        content = BoxLayout(orientation='vertical')
+        content = BoxLayout(orientation='vertical', spacing=10)
+
+        # Create a horizontal BoxLayout for the Spinner
+        spinner_layout = BoxLayout(orientation='horizontal', size_hint=(1, None), height=50)
         trip_values = [trip.destination for trip in self.trips]
-        self.trip_spinner = Spinner(values=trip_values, text="Select a Trip")
-        self.activity_input = TextInput(hint_text='Activity')
+        self.trip_spinner = Spinner(values=trip_values, text="Select a Trip", size_hint=(1, None), height=50)
+        spinner_layout.add_widget(self.trip_spinner)
+        content.add_widget(spinner_layout)
 
-        add_button = Button(text="Add")
-        add_button.bind(
-            on_press=lambda instance: self.add_activity(instance, self.add_activity_popup))  # Pass popup instance
-
-        close_button = Button(text="Close")
-        close_button.bind(on_press=lambda instance: self.dismiss_popup(self.add_activity_popup))  # Pass popup instance
-
-        content.add_widget(self.trip_spinner)
+        self.activity_input = TextInput(hint_text='Activity', size_hint=(1, None), height=50)
         content.add_widget(self.activity_input)
+
+        add_button = Button(text="Add", size_hint=(1, None), height=50)
+        add_button.bind(on_press=lambda instance: self.add_activity(instance, self.add_activity_popup))
         content.add_widget(add_button)
+
+        close_button = Button(text="Close", size_hint=(1, None), height=50)
+        close_button.bind(on_press=lambda instance: self.dismiss_popup(self.add_activity_popup))
         content.add_widget(close_button)
 
         self.add_activity_popup = Popup(title='Add Activity', content=content, size_hint=(None, None), size=(400, 300))
@@ -192,28 +199,71 @@ class TravelAppUI(BoxLayout):
         for trip in self.trips:
             if trip.destination == selected_trip_destination:
                 trip.add_activity(activity)
+                self.save_trips_to_file()  # Save the updated list of trips
                 popup.dismiss()  # Dismiss the popup after adding the activity
                 return
         self.show_message_popup("Error", "Selected trip not found.")
 
     def show_all_trips_popup(self, instance):
+        self.load_trips_from_file()
+
         if not self.trips:
             self.show_message_popup("Info", "No active trips.")
             return
 
         content = BoxLayout(orientation='vertical')
-        trips_list = Label(text='\n'.join([str(trip) for trip in self.trips]), halign='center')
+        scroll_view = ScrollView()
 
-        close_button = Button(text="Close")
-        close_button.bind(on_press=lambda instance: self.dismiss_popup(
-            self.show_all_trips_popup_instance))  # Use a distinct variable name
+        trips_layout = BoxLayout(orientation='vertical', spacing=10, size_hint_y=None)
+        trips_layout.bind(minimum_height=trips_layout.setter('height'))  # Make the layout scrollable if needed
 
-        content.add_widget(trips_list)
-        content.add_widget(close_button)
+        for trip in self.trips:
+            trip_label = Label(text=str(trip), halign='center', valign='middle', size_hint_y=None, height=50)
+            delete_button = Button(text="Delete", size_hint=(None, None), size=(100, 50))
+            delete_button.bind(on_press=lambda instance, trip=trip: self.delete_selected_trip(trip))
+
+            trip_layout = BoxLayout(orientation='horizontal', size_hint=(1, None), height=50)
+            trip_layout.add_widget(trip_label)
+            trip_layout.add_widget(delete_button)
+            trips_layout.add_widget(trip_layout)
+
+        scroll_view.add_widget(trips_layout)
+        content.add_widget(scroll_view)
+
+        # Create a horizontal BoxLayout for the close button
+        close_button_layout = BoxLayout(orientation='horizontal', size_hint=(1, None), height=50)
+        close_button = Button(text="Close", size_hint=(1, None), size=(200, 50))
+        close_button.bind(on_press=lambda instance: self.dismiss_popup(self.show_all_trips_popup_instance))
+        close_button_layout.add_widget(close_button)
+        content.add_widget(close_button_layout)
 
         self.show_all_trips_popup_instance = Popup(title='All Trips', content=content, size_hint=(None, None),
-                                                   size=(400, 300))
+                                                   size=(600, 400))
         self.show_all_trips_popup_instance.open()
+
+    def load_trips_from_file(self):
+        try:
+            with open("trips.json", "r") as file:
+                data = json.load(file)
+                self.trips = []
+
+                for trip_data in data:
+                    destination = trip_data["destination"]
+                    start_date = trip_data["start_date"]
+                    end_date = trip_data["end_date"]
+                    activities = trip_data["activities"]
+
+                    trip = Trip(destination, start_date, end_date)
+                    trip.activities = activities
+                    self.trips.append(trip)
+        except FileNotFoundError:
+            self.trips = []
+
+    def delete_selected_trip(self, trip):
+        if trip in self.trips:
+            self.trips.remove(trip)
+            self.save_trips_to_file()
+            self.show_all_trips_popup_instance.dismiss()
 
     # Method to show a message popup
     def show_message_popup(self, title, message):
