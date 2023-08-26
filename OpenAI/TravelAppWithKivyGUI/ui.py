@@ -1,3 +1,4 @@
+# ui.py
 import datetime
 
 from kivy.app import App
@@ -15,22 +16,7 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.dropdown import DropDown
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
-
-
-# Define the Trip class to store trip information
-class Trip:
-    def __init__(self, destination, start_date, end_date):
-        self.destination = destination
-        self.start_date = start_date
-        self.end_date = end_date
-        self.activities = []
-
-    def add_activity(self, activity):
-        self.activities.append(activity)
-
-    def __str__(self):
-        activities_str = "\n".join(self.activities)
-        return f"Trip to {self.destination} ({self.start_date} - {self.end_date}):\n{activities_str}"
+from trip import Trip
 
 
 #
@@ -57,27 +43,21 @@ class TravelAppUI(BoxLayout):
 
         # Create an AnchorLayout to center the "Create Trip" button
         create_trip_layout = AnchorLayout(anchor_x='center', anchor_y='center')
-        self.create_trip_button = Button(text="Create Trip", size_hint=(None, None), size=(200, 50))
+        self.create_trip_button = Button(text="Create Trip", size_hint=(None, None), size=(200, 100))
         self.create_trip_button.bind(on_press=self.show_create_trip_popup)
         create_trip_layout.add_widget(self.create_trip_button)
         self.add_widget(create_trip_layout)
 
-        # Add empty Widget for spacing
-        self.add_widget(Widget(size_hint_y=None, height=10))
-
         # Create an AnchorLayout to center the "Add Activity" button
         add_activity_layout = AnchorLayout(anchor_x='center', anchor_y='center')
-        self.add_activity_button = Button(text="Add Activity", size_hint=(None, None), size=(200, 50))
+        self.add_activity_button = Button(text="Add Activity", size_hint=(None, None), size=(200, 100))
         self.add_activity_button.bind(on_press=self.show_add_activity_popup)
         add_activity_layout.add_widget(self.add_activity_button)
         self.add_widget(add_activity_layout)
 
-        # Add empty Widget for spacing
-        self.add_widget(Widget(size_hint_y=None, height=10))
-
         # Create an AnchorLayout to center the "Show All Trips" button
         show_all_trips_layout = AnchorLayout(anchor_x='center', anchor_y='center')
-        self.show_all_trips_button = Button(text="Show All Trips", size_hint=(None, None), size=(200, 50))
+        self.show_all_trips_button = Button(text="Show All Trips", size_hint=(None, None), size=(200, 100))
         self.show_all_trips_button.bind(on_press=self.show_all_trips_popup)
         show_all_trips_layout.add_widget(self.show_all_trips_button)
         self.add_widget(show_all_trips_layout)
@@ -253,14 +233,3 @@ class TravelAppUI(BoxLayout):
     def dismiss_popup(self, popup):
         if popup:
             popup.dismiss()
-
-
-# Define the main app class
-class TravelApp(App):
-    def build(self):
-        return TravelAppUI()
-
-
-# Run the app if executed as the main script
-if __name__ == '__main__':
-    TravelApp().run()
